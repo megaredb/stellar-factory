@@ -1,0 +1,463 @@
+{
+    "player": {
+        "x": 0.0,
+        "y": 0.0,
+        "inventory": {}
+    },
+    "map": {
+        "floor": [],
+        "objects": []
+    },
+    "asteroids": [
+        {
+            "x": -265.9229984220001,
+            "y": -789.3850078899995,
+            "dx": -1,
+            "dy": 5,
+            "resource_type": "gold",
+            "amount": 36,
+            "max_amount": 36
+        },
+        {
+            "x": 450.53901104599936,
+            "y": -99.92299842200009,
+            "dx": -7,
+            "dy": -1,
+            "resource_type": "gold",
+            "amount": 30,
+            "max_amount": 30
+        },
+        {
+            "x": 815.7689952660003,
+            "y": 134.53901104599936,
+            "dx": 3,
+            "dy": -7,
+            "resource_type": "iron",
+            "amount": 50,
+            "max_amount": 50
+        },
+        {
+            "x": 652.7689952660003,
+            "y": 803.6930142019992,
+            "dx": 3,
+            "dy": -9,
+            "resource_type": "silicon",
+            "amount": 49,
+            "max_amount": 49
+        },
+        {
+            "x": 845.6149921100005,
+            "y": 788.7700157799991,
+            "dx": 5,
+            "dy": -10,
+            "resource_type": "silicon",
+            "amount": 9,
+            "max_amount": 9
+        },
+        {
+            "x": 188.69301420199918,
+            "y": 246.69199368800037,
+            "dx": -9,
+            "dy": 4,
+            "resource_type": "iron",
+            "amount": 28,
+            "max_amount": 28
+        },
+        {
+            "x": -70.61499211000046,
+            "y": 578.4620094679995,
+            "dx": -5,
+            "dy": -6,
+            "resource_type": "silicon",
+            "amount": 18,
+            "max_amount": 18
+        },
+        {
+            "x": -561.7689952660003,
+            "y": -43.231004733999725,
+            "dx": -3,
+            "dy": 3,
+            "resource_type": "iron",
+            "amount": 33,
+            "max_amount": 33
+        },
+        {
+            "x": 164.30800631199963,
+            "y": -308.3069857980008,
+            "dx": -4,
+            "dy": -9,
+            "resource_type": "silicon",
+            "amount": 47,
+            "max_amount": 47
+        },
+        {
+            "x": -238.30800631199963,
+            "y": -461.1540031559998,
+            "dx": 4,
+            "dy": 2,
+            "resource_type": "iron",
+            "amount": 18,
+            "max_amount": 18
+        },
+        {
+            "x": -367.46098895400064,
+            "y": 721.3069857980008,
+            "dx": -7,
+            "dy": 9,
+            "resource_type": "gold",
+            "amount": 10,
+            "max_amount": 10
+        },
+        {
+            "x": -248.38398737600073,
+            "y": -622.3080063119996,
+            "dx": -8,
+            "dy": 4,
+            "resource_type": "gold",
+            "amount": 14,
+            "max_amount": 14
+        },
+        {
+            "x": -742.1540031559998,
+            "y": 437.6930142019992,
+            "dx": 2,
+            "dy": -9,
+            "resource_type": "iron",
+            "amount": 49,
+            "max_amount": 49
+        },
+        {
+            "x": 525.6149921100005,
+            "y": -293.7700157799991,
+            "dx": 5,
+            "dy": 10,
+            "resource_type": "gold",
+            "amount": 42,
+            "max_amount": 42
+        },
+        {
+            "x": 810.3850078899995,
+            "y": -163.77001577999908,
+            "dx": -5,
+            "dy": 10,
+            "resource_type": "silicon",
+            "amount": 35,
+            "max_amount": 35
+        },
+        {
+            "x": -153.46200946799945,
+            "y": -846.3069857980008,
+            "dx": 6,
+            "dy": -9,
+            "resource_type": "gold",
+            "amount": 47,
+            "max_amount": 47
+        },
+        {
+            "x": -519.0,
+            "y": -971.5379905320005,
+            "dx": 0,
+            "dy": -6,
+            "resource_type": "silicon",
+            "amount": 50,
+            "max_amount": 50
+        },
+        {
+            "x": -870.0770015779999,
+            "y": 94.61601262399927,
+            "dx": 1,
+            "dy": -8,
+            "resource_type": "gold",
+            "amount": 50,
+            "max_amount": 50
+        },
+        {
+            "x": 272.9229984220001,
+            "y": -972.5379905320005,
+            "dx": 1,
+            "dy": -6,
+            "resource_type": "silicon",
+            "amount": 48,
+            "max_amount": 48
+        },
+        {
+            "x": -926.4620094679995,
+            "y": -966.3080063119996,
+            "dx": 6,
+            "dy": 4,
+            "resource_type": "iron",
+            "amount": 22,
+            "max_amount": 22
+        },
+        {
+            "x": 267.30800631199963,
+            "y": -354.61601262399927,
+            "dx": -4,
+            "dy": 8,
+            "resource_type": "iron",
+            "amount": 42,
+            "max_amount": 42
+        },
+        {
+            "x": 65.53901104599936,
+            "y": 262.2310047339997,
+            "dx": -7,
+            "dy": -3,
+            "resource_type": "silicon",
+            "amount": 37,
+            "max_amount": 37
+        },
+        {
+            "x": -230.23100473399973,
+            "y": -733.3850078899995,
+            "dx": 3,
+            "dy": 5,
+            "resource_type": "silicon",
+            "amount": 20,
+            "max_amount": 20
+        },
+        {
+            "x": -580.9229984220001,
+            "y": 360.38398737600073,
+            "dx": -1,
+            "dy": 8,
+            "resource_type": "silicon",
+            "amount": 8,
+            "max_amount": 8
+        },
+        {
+            "x": -674.3850078899995,
+            "y": 485.53799053200055,
+            "dx": 5,
+            "dy": 6,
+            "resource_type": "silicon",
+            "amount": 8,
+            "max_amount": 8
+        },
+        {
+            "x": 714.5390110459994,
+            "y": 98.69301420199918,
+            "dx": -7,
+            "dy": -9,
+            "resource_type": "silicon",
+            "amount": 39,
+            "max_amount": 39
+        },
+        {
+            "x": -721.1540031559998,
+            "y": -962.3080063119996,
+            "dx": 2,
+            "dy": 4,
+            "resource_type": "iron",
+            "amount": 5,
+            "max_amount": 5
+        },
+        {
+            "x": -987.0770015779999,
+            "y": -974.4609889540006,
+            "dx": 1,
+            "dy": -7,
+            "resource_type": "iron",
+            "amount": 8,
+            "max_amount": 8
+        },
+        {
+            "x": 123.53799053200055,
+            "y": -430.38398737600073,
+            "dx": 6,
+            "dy": -8,
+            "resource_type": "iron",
+            "amount": 30,
+            "max_amount": 30
+        },
+        {
+            "x": 780.6930142019992,
+            "y": 521.2310047339997,
+            "dx": -9,
+            "dy": -3,
+            "resource_type": "iron",
+            "amount": 38,
+            "max_amount": 38
+        },
+        {
+            "x": -925.5379905320005,
+            "y": 792.4609889540006,
+            "dx": -6,
+            "dy": 7,
+            "resource_type": "gold",
+            "amount": 14,
+            "max_amount": 14
+        },
+        {
+            "x": -756.5390110459994,
+            "y": -91.69301420199918,
+            "dx": 7,
+            "dy": 9,
+            "resource_type": "gold",
+            "amount": 34,
+            "max_amount": 34
+        },
+        {
+            "x": -750.2310047339997,
+            "y": -717.2299842200009,
+            "dx": 3,
+            "dy": -10,
+            "resource_type": "iron",
+            "amount": 16,
+            "max_amount": 16
+        },
+        {
+            "x": -55.38500788999954,
+            "y": -604.4609889540006,
+            "dx": 5,
+            "dy": -7,
+            "resource_type": "gold",
+            "amount": 15,
+            "max_amount": 15
+        },
+        {
+            "x": 834.1540031559998,
+            "y": 557.6149921100005,
+            "dx": -2,
+            "dy": 5,
+            "resource_type": "silicon",
+            "amount": 8,
+            "max_amount": 8
+        },
+        {
+            "x": -643.6919936880004,
+            "y": -874.6149921100005,
+            "dx": -4,
+            "dy": -5,
+            "resource_type": "gold",
+            "amount": 43,
+            "max_amount": 43
+        },
+        {
+            "x": 760.9229984220001,
+            "y": 253.30800631199963,
+            "dx": 1,
+            "dy": -4,
+            "resource_type": "silicon",
+            "amount": 36,
+            "max_amount": 36
+        },
+        {
+            "x": 158.30800631199963,
+            "y": -15.46098895400064,
+            "dx": -4,
+            "dy": -7,
+            "resource_type": "silicon",
+            "amount": 17,
+            "max_amount": 17
+        },
+        {
+            "x": -50.61601262399927,
+            "y": -578.0,
+            "dx": 8,
+            "dy": 0,
+            "resource_type": "iron",
+            "amount": 49,
+            "max_amount": 49
+        },
+        {
+            "x": 3.308006311999634,
+            "y": 566.1540031559998,
+            "dx": -4,
+            "dy": -2,
+            "resource_type": "gold",
+            "amount": 43,
+            "max_amount": 43
+        },
+        {
+            "x": 49.306985798000824,
+            "y": 316.6930142019992,
+            "dx": 9,
+            "dy": -9,
+            "resource_type": "silicon",
+            "amount": 9,
+            "max_amount": 9
+        },
+        {
+            "x": 392.53901104599936,
+            "y": -526.4620094679995,
+            "dx": -7,
+            "dy": 6,
+            "resource_type": "gold",
+            "amount": 17,
+            "max_amount": 17
+        },
+        {
+            "x": 252.0770015779999,
+            "y": -72.61499211000046,
+            "dx": -1,
+            "dy": -5,
+            "resource_type": "silicon",
+            "amount": 35,
+            "max_amount": 35
+        },
+        {
+            "x": -1025.229984220001,
+            "y": -498.38500788999954,
+            "dx": -10,
+            "dy": 5,
+            "resource_type": "gold",
+            "amount": 28,
+            "max_amount": 28
+        },
+        {
+            "x": 39.53799053200055,
+            "y": -96.30800631199963,
+            "dx": 6,
+            "dy": 4,
+            "resource_type": "gold",
+            "amount": 9,
+            "max_amount": 9
+        },
+        {
+            "x": -297.1540031559998,
+            "y": -767.1540031559998,
+            "dx": 2,
+            "dy": 2,
+            "resource_type": "silicon",
+            "amount": 30,
+            "max_amount": 30
+        },
+        {
+            "x": -797.0770015779999,
+            "y": 874.9229984220001,
+            "dx": 1,
+            "dy": 1,
+            "resource_type": "iron",
+            "amount": 17,
+            "max_amount": 17
+        },
+        {
+            "x": 59.38398737600073,
+            "y": 243.76899526600027,
+            "dx": 8,
+            "dy": 3,
+            "resource_type": "gold",
+            "amount": 50,
+            "max_amount": 50
+        },
+        {
+            "x": -390.0770015779999,
+            "y": 61.691993688000366,
+            "dx": 1,
+            "dy": 4,
+            "resource_type": "iron",
+            "amount": 30,
+            "max_amount": 30
+        },
+        {
+            "x": 955.7689952660003,
+            "y": -556.7700157799991,
+            "dx": 3,
+            "dy": 10,
+            "resource_type": "iron",
+            "amount": 31,
+            "max_amount": 31
+        }
+    ]
+}
