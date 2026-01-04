@@ -319,6 +319,11 @@ class LogisticsProcessor(esper.Processor):
             if ent == drone.source_id:
                 continue
 
+            # Check if storage has space
+            total_items = sum(inv.resources.values())
+            if total_items >= store.capacity:
+                continue  # Storage is full
+
             dist = math.hypot(store_pos.x - pos.x, store_pos.y - pos.y)
             if dist < min_dist:
                 min_dist = dist

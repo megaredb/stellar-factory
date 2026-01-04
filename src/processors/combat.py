@@ -4,11 +4,11 @@ import math
 
 from src.components import Position, Velocity, Renderable
 from src.components.combat import Turret, Projectile
-from src.components.logistics import ResourceChunk
 from src.components.gameplay import ResourceSource
 from src.processors.mining import MiningProcessor
 from src.systems.audio import AudioSystem
-import random
+from src.spatial.quadtree import QuadTree, Point, Rectangle
+from src.game_data import MAP_LIMIT_X, MAP_LIMIT_Y
 
 
 class CombatProcessor(esper.Processor):
@@ -17,9 +17,21 @@ class CombatProcessor(esper.Processor):
         self.mining = mining
         self.sprite_list = sprite_list
 
+        boundary = Rectangle(0, 0, MAP_LIMIT_X * 1.5, MAP_LIMIT_Y * 1.5)
+        self.asteroid_tree = QuadTree(boundary, capacity=8)
+
     def process(self, dt: float):
+        self._rebuild_asteroid_tree()
+
         self._process_turrets(dt)
         self._process_projectiles(dt)
+
+    def _rebuild_asteroid_tree(self):
+        self.asteroid_tree.clear()
+
+        for ent, (res, pos) in esper.get_components(ResourceSource, Position):
+            point = Point(pos.x, pos.y, ent)
+            self.asteroid_tree.insert(point)
 
     def _process_turrets(self, dt: float):
         for ent, (turret, pos, renderable) in esper.get_components(
@@ -30,40 +42,102 @@ class CombatProcessor(esper.Processor):
             if turret.last_shot_time < turret.cooldown:
                 continue
 
-            # Find closest target
+            candidates = self.asteroid_tree.query_radius(pos.x, pos.y, turret.range)
+
             target_id = -1
             min_dist = turret.range
 
-            for target_ent, (res, target_pos) in esper.get_components(
-                ResourceSource, Position
-            ):
+            for candidate_id in candidates:
+                if not esper.entity_exists(candidate_id):
+                    continue
+
+                target_pos = esper.component_for_entity(candidate_id, Position)
                 dist = math.hypot(target_pos.x - pos.x, target_pos.y - pos.y)
                 if dist < min_dist:
                     min_dist = dist
-                    target_id = target_ent
+                    target_id = candidate_id
 
             if target_id != -1:
                 self._fire_turret(ent, turret, pos, renderable, target_id)
 
+    @staticmethod
+    def _calculate_intercept(
+        tx: float,  # turret
+        ty: float,
+        px: float,  # target position
+        py: float,
+        vx: float,  # target velocity
+        vy: float,
+        projectile_speed: float,
+    ) -> tuple[float, float] | None:
+        dx = px - tx
+        dy = py - ty
+
+        a = vx**2 + vy**2 - projectile_speed**2
+        b = 2 * (dx * vx + dy * vy)
+        c = dx**2 + dy**2
+
+        discriminant = b**2 - 4 * a * c
+
+        if discriminant < 0:
+            return None
+
+        if abs(a) < 0.001:
+            if abs(b) < 0.001:
+                return px, py
+            t = -c / b
+            if t < 0:
+                return None
+        else:
+            sqrt_discriminant = math.sqrt(discriminant)
+            t1 = (-b - sqrt_discriminant) / (2 * a)
+            t2 = (-b + sqrt_discriminant) / (2 * a)
+
+            valid_times = [t for t in [t1, t2] if t > 0]
+            if not valid_times:
+                return None
+            t = min(valid_times)
+
+        aim_x = px + vx * t
+        aim_y = py + vy * t
+
+        return aim_x, aim_y
+
     def _fire_turret(self, turret_ent, turret, pos, renderable, target_id):
         turret.last_shot_time = 0.0
+        speed = 100.0
 
-        # Calculate angle
         target_pos = esper.component_for_entity(target_id, Position)
-        dx = target_pos.x - pos.x
-        dy = target_pos.y - pos.y
+
+        aim_x, aim_y = target_pos.x, target_pos.y
+
+        if esper.has_component(target_id, Velocity):
+            target_vel = esper.component_for_entity(target_id, Velocity)
+
+            intercept = self._calculate_intercept(
+                pos.x,
+                pos.y,
+                target_pos.x,
+                target_pos.y,
+                target_vel.dx,
+                target_vel.dy,
+                speed,
+            )
+
+            if intercept:
+                aim_x, aim_y = intercept
+
+        dx = aim_x - pos.x
+        dy = aim_y - pos.y
         angle = math.atan2(dy, dx)
 
-        # Rotate turret
-        renderable.sprite.angle = math.degrees(angle)
+        renderable.sprite.angle = -math.degrees(angle)
 
-        # Spawn projectile
         sprite = arcade.SpriteCircle(5, arcade.color.YELLOW)
         sprite.center_x = pos.x
         sprite.center_y = pos.y
         self.sprite_list.append(sprite)
 
-        speed = 600.0
         vel_x = math.cos(angle) * speed
         vel_y = math.sin(angle) * speed
 
@@ -92,7 +166,6 @@ class CombatProcessor(esper.Processor):
                 if dist < 20:
                     self._handle_hit(ent, proj, renderable)
             else:
-                # Target dead, destroy projectile
                 self._destroy_projectile(ent, renderable)
 
     def _handle_hit(self, proj_ent, proj, renderable):
