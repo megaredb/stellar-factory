@@ -1,8 +1,9 @@
 import esper
 import random
 
-from src.components import Position, Velocity, Renderable
 from src.components.gameplay import ResourceSource
+from src.components.physics import Velocity, Position
+from src.components.render import Renderable
 from src.sprites import SpriteListType, create_asteroid_sprite
 
 RESOURCE_TYPES = ["iron", "gold", "silicon"]

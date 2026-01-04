@@ -1,7 +1,8 @@
 import arcade
 import esper
 
-from src.components import Renderable, Position
+from src.components.physics import Position
+from src.components.render import Renderable
 from src.sprites import SpriteListType
 
 

@@ -1,6 +1,7 @@
 import esper
-from src.components import Position, Velocity, Renderable
+from src.components.physics import Position, Velocity
 from src.components.gameplay import ResourceSource
+from src.components.render import Renderable
 from src.game_data import MAP_LIMIT_X, MAP_LIMIT_Y
 
 

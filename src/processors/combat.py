@@ -2,9 +2,10 @@ import arcade
 import esper
 import math
 
-from src.components import Position, Velocity, Renderable
 from src.components.combat import Turret, Projectile
 from src.components.gameplay import ResourceSource
+from src.components.physics import Velocity, Position
+from src.components.render import Renderable
 from src.processors.mining import MiningProcessor
 from src.systems.audio import AudioSystem
 from src.spatial.quadtree import QuadTree, Point, Rectangle
@@ -197,6 +198,7 @@ class CombatProcessor(esper.Processor):
 
         self._destroy_projectile(proj_ent, renderable)
 
-    def _destroy_projectile(self, ent, renderable):
+    @staticmethod
+    def _destroy_projectile(ent, renderable):
         renderable.sprite.remove_from_sprite_lists()
         esper.delete_entity(ent)

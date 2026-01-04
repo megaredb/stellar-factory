@@ -2,7 +2,8 @@ import arcade
 import esper
 import math
 
-from src.components import Position
+from src.components.physics import Position
+from src.components.base import BaseComponent
 from src.components.map import MapTag, GridPosition
 from src.components.world import WorldMap
 from src.components.combat import Turret
@@ -259,86 +260,72 @@ class BuilderProcessor(esper.Processor):
                 int(ACTUAL_TILE_SIZE * 0.4),  # Shorter/Narrower
                 color=arcade.color.ROCKET_METALLIC,
             )
-            sprite.center_x = gx * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            sprite.center_y = gy * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            target_list.append(sprite)
         elif block_type == BlockType.COLLECTOR:
             sprite = arcade.SpriteSolidColor(
                 int(ACTUAL_TILE_SIZE),
                 int(ACTUAL_TILE_SIZE),
                 color=arcade.color.ORANGE_PEEL,
             )
-            sprite.center_x = gx * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            sprite.center_y = gy * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            sprite.center_x = gx * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            sprite.center_y = gy * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            target_list.append(sprite)
         elif block_type == BlockType.STORAGE:
             sprite = arcade.SpriteSolidColor(
                 int(ACTUAL_TILE_SIZE),
                 int(ACTUAL_TILE_SIZE),
                 color=arcade.color.DARK_BROWN,
             )
-            sprite.center_x = gx * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            sprite.center_y = gy * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            target_list.append(sprite)
         elif block_type == BlockType.DRONE_STATION:
             sprite = arcade.SpriteSolidColor(
                 int(ACTUAL_TILE_SIZE),
                 int(ACTUAL_TILE_SIZE),
                 color=arcade.color.AIR_FORCE_BLUE,
             )
-            sprite.center_x = gx * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            sprite.center_y = gy * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            target_list.append(sprite)
         elif block_type == BlockType.SMELTER:
             sprite = arcade.SpriteSolidColor(
                 int(ACTUAL_TILE_SIZE),
                 int(ACTUAL_TILE_SIZE),
                 color=arcade.color.RED_DEVIL,
             )
-            sprite.center_x = gx * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            sprite.center_y = gy * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            target_list.append(sprite)
         elif block_type == BlockType.ASSEMBLER:
             sprite = arcade.SpriteSolidColor(
                 int(ACTUAL_TILE_SIZE),
                 int(ACTUAL_TILE_SIZE),
                 color=arcade.color.GREEN,
             )
-            sprite.center_x = gx * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            sprite.center_y = gy * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
-            target_list.append(sprite)
 
-        if sprite:
-            components = [
-                GridPosition(gx, gy),
-                Position(sprite.center_x, sprite.center_y),
-                MapTag(block_type),
-                Renderable(sprite=sprite),
-            ]
-            if block_type == BlockType.TURRET:
-                components.append(Turret())
-            elif block_type == BlockType.COLLECTOR:
-                components.append(Collector())
-                components.append(Inventory())
-            elif block_type == BlockType.STORAGE:
-                components.append(Storage())
-                components.append(Inventory())
-            elif block_type == BlockType.DRONE_STATION:
-                components.append(DroneStation())
-            elif block_type == BlockType.SMELTER or block_type == BlockType.ASSEMBLER:
-                components.append(Factory())
-                components.append(Inventory())
+        if not sprite:
+            return
 
-            ent = esper.create_entity(*components)
+        sprite.center_x = gx * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
+        sprite.center_y = gy * ACTUAL_TILE_SIZE + HALF_TILE_SIZE
+        target_list.append(sprite)
 
-            if block_type == BlockType.DRONE_STATION:
-                self._spawn_drone(gx, gy, ent)
+        components: list[BaseComponent] = [
+            GridPosition(gx, gy),
+            Position(sprite.center_x, sprite.center_y),
+            MapTag(block_type),
+            Renderable(sprite=sprite),
+        ]
+        if block_type == BlockType.TURRET:
+            components.append(Turret())
+        elif block_type == BlockType.COLLECTOR:
+            components.append(Collector())
+            components.append(Inventory())
+        elif block_type == BlockType.STORAGE:
+            components.append(Storage(capacity=1000))
+            components.append(Inventory())
+        elif block_type == BlockType.DRONE_STATION:
+            components.append(DroneStation())
+        elif block_type == BlockType.SMELTER or block_type == BlockType.ASSEMBLER:
+            components.append(Factory())
+            components.append(Inventory())
 
-            world_map = self.get_world_map()
-            if world_map:
-                world_map.entity_map[(gx, gy, layer)] = ent
+        ent = esper.create_entity(*components)
+
+        if block_type == BlockType.DRONE_STATION:
+            self._spawn_drone(gx, gy, ent)
+
+        world_map = self.get_world_map()
+        if world_map:
+            world_map.entity_map[(gx, gy, layer)] = ent
 
     def _remove_entity(self, gx, gy, layer):
         world_map = self.get_world_map()

@@ -2,8 +2,8 @@ import json
 from typing import Any
 
 import esper
-from src.components import Position, Velocity
 from src.components.gameplay import Inventory, PlayerControl, ResourceSource
+from src.components.physics import Position, Velocity
 from src.components.world import WorldMap
 from src.processors.builder import BuilderProcessor
 from src.processors.render import RenderProcessor
@@ -24,7 +24,7 @@ def save_game(builder: BuilderProcessor):
         break
 
     # Save Map
-    for ent, (world_map,) in esper.get_components(WorldMap):
+    for ent, world_map in esper.get_component(WorldMap):
         data["map"] = {
             "floor": [
                 {"x": k[0], "y": k[1], "type": v}

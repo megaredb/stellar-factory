@@ -3,7 +3,7 @@ import esper
 from arcade.math import lerp_2d
 from pyglet.math import Vec2
 
-from src.components import Position
+from src.components.physics import Position
 from src.components.gameplay import PlayerControl
 from src.processors.keyboard import KeyboardProcessor
 from src.processors.mouse import MouseProcessor

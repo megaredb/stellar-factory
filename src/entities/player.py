@@ -1,6 +1,7 @@
 import esper
-from src.components import Position, Velocity, Renderable
 from src.components.gameplay import PlayerControl, Inventory
+from src.components.physics import Position, Velocity
+from src.components.render import Renderable
 from src.sprites import SpriteListType, create_ship_sprite
 
 

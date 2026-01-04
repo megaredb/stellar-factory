@@ -2,10 +2,10 @@ import arcade
 import esper
 import random
 import math
-from src.components import Renderable, Position
 from src.components.gameplay import Inventory, ResourceSource, PlayerControl
 from src.components.logistics import ResourceChunk
-from src.components.physics import Velocity
+from src.components.physics import Velocity, Position
+from src.components.render import Renderable
 from src.systems.inventory import add_item
 from src.systems.audio import AudioSystem
 from src.processors.mouse import MouseProcessor

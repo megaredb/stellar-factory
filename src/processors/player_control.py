@@ -1,7 +1,7 @@
 import arcade
 import esper
-from src.components import Velocity, Position
 from src.components.gameplay import PlayerControl
+from src.components.physics import Velocity
 from src.processors.keyboard import KeyboardProcessor
 
 

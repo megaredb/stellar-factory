@@ -1,9 +1,9 @@
-from dataclasses import field
 from src.components import component
+from src.components.base import BaseComponent
 
 
 @component
-class Turret:
+class Turret(BaseComponent):
     range: float = 300.0
     cooldown: float = 1.0
     damage: int = 10
@@ -11,7 +11,7 @@ class Turret:
 
 
 @component
-class Projectile:
+class Projectile(BaseComponent):
     target_id: int = -1
     speed: float = 400.0
     damage: int = 10

@@ -2,20 +2,19 @@ import arcade
 import esper
 import math
 
-from src.components import Position, Velocity, Renderable
 from src.components.logistics import (
     Collector,
     ResourceChunk,
     Drone,
     Storage,
-    DroneStation,
 )
 from src.components.gameplay import Inventory, PlayerControl
+from src.components.physics import Position, Velocity
 from src.components.production import Factory
 from src.components.map import MapTag
-from src.game_data import RECIPES, BLOCK_PROPERTIES
+from src.components.render import Renderable
+from src.game_data import RECIPES
 from src.systems.inventory import add_item, remove_resources
-from src.systems.audio import AudioSystem
 
 
 class LogisticsProcessor(esper.Processor):
@@ -33,15 +32,15 @@ class LogisticsProcessor(esper.Processor):
         # Get all collectors (including player)
         collectors = []
         for ent, (collector, pos) in esper.get_components(Collector, Position):
-            collectors.append(
-                (ent, collector, pos, None)
-            )  # None for inventory, handled later if needed
+            collectors.append((ent, collector, pos, None))
 
         # Player is also a collector (conceptually)
         for ent, (inv, ctrl, pos) in esper.get_components(
             Inventory, PlayerControl, Position
         ):
-            # Create a temporary "Collector" component for the player
+            if inv is None:
+                continue
+
             player_collector = Collector(range=100.0, pull_speed=400.0)
             collectors.append((ent, player_collector, pos, inv))  # type: ignore
 
@@ -60,41 +59,95 @@ class LogisticsProcessor(esper.Processor):
             chunk_vel.dx *= 0.95
             chunk_vel.dy *= 0.95
 
-            # Check attraction
+            # Find closest collector in range
+            # Player has PRIORITY - can override claimed chunks
+            player_collector = None
+            closest_collector = None
+            min_dist = float("inf")
+
             for col_ent, col, col_pos, col_inv in collectors:
                 dist = math.hypot(col_pos.x - chunk_pos.x, col_pos.y - chunk_pos.y)
 
                 if dist < col.range:
+                    # Check if collector has space (skip if full)
+                    if col_inv is None:  # Block collector (not player)
+                        if esper.has_component(col_ent, Inventory):
+                            inv = esper.component_for_entity(col_ent, Inventory)
+                            total = sum(inv.resources.values())
+                            if total >= col.capacity:
+                                continue  # Collector full
+                    else:
+                        # This is the player - give priority
+                        if dist < 20:  # Player collection radius
+                            player_collector = (col_ent, col, col_pos, col_inv)
+                            break  # Player found, stop searching
+
+                    if dist < min_dist:
+                        min_dist = dist
+                        closest_collector = (col_ent, col, col_pos, col_inv)
+
+            # Player has priority - can claim any chunk in range
+            if player_collector:
+                col_ent, col, col_pos, col_inv = player_collector
+                chunk.claimed_by = col_ent  # Override any claim
+                
+                # Pull towards player
+                angle = math.atan2(col_pos.y - chunk_pos.y, col_pos.x - chunk_pos.x)
+                chunk_vel.dx += math.cos(angle) * col.pull_speed * dt
+                chunk_vel.dy += math.sin(angle) * col.pull_speed * dt
+                
+                # Collect immediately if close
+                dist = math.hypot(col_pos.x - chunk_pos.x, col_pos.y - chunk_pos.y)
+                if dist < 20:
+                    if self._collect_chunk(chunk_ent, chunk, col_ent, col_inv):
+                        chunks_to_destroy.append((chunk_ent, chunk_rend))
+            
+            # Otherwise, use normal collector claiming
+            elif closest_collector:
+                col_ent, col, col_pos, col_inv = closest_collector
+
+                # Claim this chunk if unclaimed or already claimed by this collector
+                if chunk.claimed_by == -1 or chunk.claimed_by == col_ent:
+                    chunk.claimed_by = col_ent
+
                     # Pull towards collector
                     angle = math.atan2(col_pos.y - chunk_pos.y, col_pos.x - chunk_pos.x)
                     chunk_vel.dx += math.cos(angle) * col.pull_speed * dt
                     chunk_vel.dy += math.sin(angle) * col.pull_speed * dt
 
                     # Collection radius
-                    if dist < 20:
+                    if min_dist < 20:
                         if self._collect_chunk(chunk_ent, chunk, col_ent, col_inv):
                             chunks_to_destroy.append((chunk_ent, chunk_rend))
-                        break  # Collected, stop checking other collectors
 
         for ent, rend in chunks_to_destroy:
             self._destroy_chunk(ent, rend)
 
-    def _collect_chunk(self, chunk_ent, chunk, col_ent, col_inv):
+    @staticmethod
+    def _collect_chunk(chunk_ent, chunk, col_ent, col_inv):
         # If it's the player, add to inventory directly
         if col_inv:
             add_item(col_inv, chunk.resource_type, chunk.amount)
-            # AudioSystem().play_sound("collect") # Need sound
             return True
         else:
-            # If it's a block collector, it needs an inventory component to store it.
+            # If it's a block collector, check capacity
             if esper.has_component(col_ent, Inventory):
                 inv = esper.component_for_entity(col_ent, Inventory)
+
+                # Check capacity if it's a Collector block
+                if esper.has_component(col_ent, Collector):
+                    collector = esper.component_for_entity(col_ent, Collector)
+                    total = sum(inv.resources.values())
+                    if total >= collector.capacity:
+                        return False  # Collector full, don't collect
+
                 add_item(inv, chunk.resource_type, chunk.amount)
                 return True
 
         return False
 
-    def _destroy_chunk(self, ent, renderable):
+    @staticmethod
+    def _destroy_chunk(ent, renderable):
         renderable.sprite.remove_from_sprite_lists()
         esper.delete_entity(ent)
 
@@ -112,7 +165,16 @@ class LogisticsProcessor(esper.Processor):
                 self._handle_returning_to_station(dt, ent, drone, pos, renderable)
 
     def _handle_idle(self, ent, drone, pos):
-        # Find source (Collector with items)
+        # If drone has items, try to find a target (wait for storage/factory)
+        if drone.inventory:
+            target_id = self._find_target(pos, drone)
+            if target_id != -1:
+                drone.target_id = target_id
+                drone.state = "MOVING_TO_TARGET"
+            # Otherwise, stay IDLE and wait (don't accumulate more items)
+            return
+
+        # If drone is empty, find source
         source_id = self._find_source(pos)
         if source_id != -1:
             drone.source_id = source_id
@@ -163,7 +225,8 @@ class LogisticsProcessor(esper.Processor):
         if self._move_towards(dt, pos, target_pos, drone.speed, renderable):
             drone.state = "IDLE"
 
-    def _move_towards(self, dt, current_pos, target_pos, speed, renderable):
+    @staticmethod
+    def _move_towards(dt, current_pos, target_pos, speed, renderable):
         dx = target_pos.x - current_pos.x
         dy = target_pos.y - current_pos.y
         dist = math.hypot(dx, dy)
@@ -181,7 +244,8 @@ class LogisticsProcessor(esper.Processor):
 
         return False
 
-    def _find_source(self, pos):
+    @staticmethod
+    def _find_source(pos):
         best_id = -1
         min_dist = float("inf")
 
@@ -200,7 +264,6 @@ class LogisticsProcessor(esper.Processor):
         if best_id != -1:
             return best_id
 
-        # 2. Check Factories with Output (Medium Priority)
         for ent, (factory, inv, factory_pos, tag) in esper.get_components(
             Factory, Inventory, Position, MapTag
         ):
@@ -269,7 +332,8 @@ class LogisticsProcessor(esper.Processor):
 
         return best_id
 
-    def _find_target(self, pos, drone):
+    @staticmethod
+    def _find_target(pos, drone):
         best_id = -1
         min_dist = float("inf")
 
@@ -286,7 +350,6 @@ class LogisticsProcessor(esper.Processor):
 
             # Simple check: does any recipe for this machine use the item?
             accepts_item = False
-            input_limit_reached = False
 
             for recipe_name, data in RECIPES.items():
                 if data["machine"] == machine_type:
@@ -296,8 +359,6 @@ class LogisticsProcessor(esper.Processor):
                             current_amount = inv.resources.get(input_item, 0)
                             if current_amount < input_amount * 5:
                                 accepts_item = True
-                            else:
-                                input_limit_reached = True
                             break
                 if accepts_item:
                     break
@@ -322,7 +383,7 @@ class LogisticsProcessor(esper.Processor):
             # Check if storage has space
             total_items = sum(inv.resources.values())
             if total_items >= store.capacity:
-                continue  # Storage is full
+                continue
 
             dist = math.hypot(store_pos.x - pos.x, store_pos.y - pos.y)
             if dist < min_dist:
@@ -331,7 +392,8 @@ class LogisticsProcessor(esper.Processor):
 
         return best_id
 
-    def _take_items(self, drone, source_id):
+    @staticmethod
+    def _take_items(drone, source_id):
         if not esper.has_component(source_id, Inventory):
             return
 
@@ -363,11 +425,39 @@ class LogisticsProcessor(esper.Processor):
                 drone.inventory[res] = drone.inventory.get(res, 0) + to_take
                 break
 
-    def _deposit_items(self, drone, target_id):
+    @staticmethod
+    def _deposit_items(drone, target_id):
         if not esper.has_component(target_id, Inventory):
             return
 
         inv = esper.component_for_entity(target_id, Inventory)
-        for res, amount in list(drone.inventory.items()):
-            add_item(inv, res, amount)
-        drone.inventory.clear()
+
+        # Check if target is Storage with capacity limit
+        if esper.has_component(target_id, Storage):
+            storage = esper.component_for_entity(target_id, Storage)
+            current_total = sum(inv.resources.values())
+            available_space = storage.capacity - current_total
+
+            if available_space <= 0:
+                # Storage is full, drone keeps items
+                return
+
+            # Deposit only what fits
+            deposited = 0
+            for res, amount in list(drone.inventory.items()):
+                if deposited >= available_space:
+                    break
+
+                to_deposit = min(amount, available_space - deposited)
+                add_item(inv, res, to_deposit)
+                drone.inventory[res] -= to_deposit
+
+                if drone.inventory[res] == 0:
+                    del drone.inventory[res]
+
+                deposited += to_deposit
+        else:
+            # Factory - no capacity limit, deposit everything
+            for res, amount in list(drone.inventory.items()):
+                add_item(inv, res, amount)
+            drone.inventory.clear()

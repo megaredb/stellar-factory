@@ -96,7 +96,7 @@ RECIPES = {
         "inputs": {"silicon": 1},
         "outputs": {"silicon_wafer": 1},
         "time": 3.0,
-        "machine": BlockType.SMELTER,  # Or maybe a different machine? Let's stick to Smelter for now or add Furnace
+        "machine": BlockType.SMELTER,
     },
     "circuit": {
         "inputs": {"iron_bar": 1, "silicon_wafer": 1},
