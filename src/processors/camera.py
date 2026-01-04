@@ -11,7 +11,7 @@ from src.processors.mouse import MouseProcessor
 ZOOM_SPEED = 0.1
 MIN_ZOOM = 0.2
 MAX_ZOOM = 4.0
-LERP_SPEED = 5.0  # Меньше = плавнее
+LERP_SPEED = 5.0
 
 
 class CameraProcessor(esper.Processor):

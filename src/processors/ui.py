@@ -91,7 +91,7 @@ class UIProcessor(esper.Processor):
         gy = int(world_y // ACTUAL_TILE_SIZE)
 
         # Find entity at this location
-        world_map = self.builder._get_world_map()
+        world_map = self.builder.get_world_map()
         if not world_map:
             return
 

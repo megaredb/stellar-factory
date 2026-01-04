@@ -17,4 +17,3 @@ class ResourceSource:
 @component
 class Inventory:
     resources: dict[str, int] = field(default_factory=dict)
-

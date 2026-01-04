@@ -51,8 +51,8 @@ class GameView(arcade.View):
             self.render_processor.sprite_lists["chunks"],
         )
         self.combat_processor = CombatProcessor(
+            self.mining_processor,
             self.render_processor.sprite_lists["projectiles"],
-            self.render_processor.sprite_lists["chunks"],
         )
         self.logistics_processor = LogisticsProcessor(
             self.render_processor.sprite_lists["drones"]

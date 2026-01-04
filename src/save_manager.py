@@ -27,10 +27,12 @@ def save_game(builder: BuilderProcessor):
     for ent, (world_map,) in esper.get_components(WorldMap):
         data["map"] = {
             "floor": [
-                {"x": k[0], "y": k[1], "type": v} for k, v in world_map.floor_data.items()
+                {"x": k[0], "y": k[1], "type": v}
+                for k, v in world_map.floor_data.items()
             ],
             "objects": [
-                {"x": k[0], "y": k[1], "type": v} for k, v in world_map.object_data.items()
+                {"x": k[0], "y": k[1], "type": v}
+                for k, v in world_map.object_data.items()
             ],
         }
         break
@@ -92,7 +94,7 @@ def load_game(builder: BuilderProcessor, render_processor: RenderProcessor):
     # world_map is already available from creation above
     world_map.floor_data.clear()
     world_map.object_data.clear()
-    
+
     for item in map_data.get("floor", []):
         world_map.floor_data[(item["x"], item["y"])] = item["type"]
 

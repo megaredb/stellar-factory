@@ -67,7 +67,7 @@ class PauseView(arcade.View):
     def on_draw(self):
         self.clear()
         self.game_view.on_draw()
-        
+
         self.window.default_camera.use()
 
         arcade.draw_text(

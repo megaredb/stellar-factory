@@ -1,11 +1,16 @@
 import arcade
 import arcade.gui
+import esper
+
+from src.views.game import GameView
 from src.views.settings import SettingsView
 
 
 class MenuView(arcade.View):
     def __init__(self):
         super().__init__()
+        esper.clear_database()
+
         self.manager = arcade.gui.UIManager()
         self.manager.enable()
 
@@ -31,8 +36,6 @@ class MenuView(arcade.View):
         )
 
     def on_click_start(self, event):
-        from src.views.game import GameView
-
         game_view = GameView()
         game_view.setup()
         self.window.show_view(game_view)

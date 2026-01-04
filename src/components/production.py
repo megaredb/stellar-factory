@@ -1,6 +1,7 @@
 from dataclasses import field
 from src.components import component
 
+
 @component
 class Factory:
     recipe_id: str = ""

@@ -65,7 +65,9 @@ class MiningProcessor(esper.Processor):
         for ent, (res_source, renderable, pos) in esper.get_components(
             ResourceSource, Renderable, Position
         ):
-            if res_source.amount > 0 and renderable.sprite.collides_with_point((world_x, world_y)):
+            if res_source.amount > 0 and renderable.sprite.collides_with_point(
+                (world_x, world_y)
+            ):
                 target_entity = ent
                 target_pos = (pos.x, pos.y)
                 break
@@ -108,7 +110,7 @@ class MiningProcessor(esper.Processor):
         res_source.amount -= amount_to_take
 
         # Spawn chunk
-        self._spawn_chunk(pos[0], pos[1], res_source.resource_type, amount_to_take)
+        self.spawn_chunk(pos[0], pos[1], res_source.resource_type, amount_to_take)
 
         AudioSystem().play_sound("laser")
 
@@ -149,7 +151,7 @@ class MiningProcessor(esper.Processor):
             life = random.uniform(0.3, 0.6)
             self.particles.append(Particle(x, y, dx, dy, color, life))
 
-    def _spawn_chunk(self, x, y, res_type, amount):
+    def spawn_chunk(self, x, y, res_type, amount):
         sprite = arcade.SpriteCircle(3, arcade.color.YELLOW)  # Placeholder color
         if res_type == "iron":
             sprite.color = arcade.color.GRAY

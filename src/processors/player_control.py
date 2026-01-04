@@ -37,8 +37,8 @@ class PlayerControlProcessor(esper.Processor):
                 input_x = 1
 
             if input_x != 0 and input_y != 0:
-                input_x *= 0.7071
-                input_y *= 0.7071
+                input_x *= 0.7071  # sqrt(1/2)
+                input_y *= 0.7071  # sqrt(1/2)
 
             vel.dx = input_x * control.speed
             vel.dy = input_y * control.speed

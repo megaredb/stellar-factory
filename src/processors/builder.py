@@ -8,7 +8,6 @@ from src.components.world import WorldMap
 from src.components.combat import Turret
 from src.components.logistics import Collector, Storage, DroneStation, Drone
 from src.components.production import Factory
-from src.components.physics import Velocity
 from src.systems.audio import AudioSystem
 from src.components.render import Renderable
 from src.components.gameplay import Inventory, PlayerControl
@@ -138,7 +137,7 @@ class BuilderProcessor(esper.Processor):
         props = BLOCK_PROPERTIES[self.selected_block]
         layer = props["layer"]
 
-        world_map = self._get_world_map()
+        world_map = self.get_world_map()
         if not world_map:
             return False, "No World"
 
@@ -180,7 +179,7 @@ class BuilderProcessor(esper.Processor):
         return None
 
     @staticmethod
-    def _get_world_map() -> WorldMap | None:
+    def get_world_map() -> WorldMap | None:
         for ent, world_map in esper.get_component(WorldMap):
             return world_map
         return None
@@ -192,7 +191,7 @@ class BuilderProcessor(esper.Processor):
         if inv:
             remove_resources(inv, cost)
 
-        world_map = self._get_world_map()
+        world_map = self.get_world_map()
         if not world_map:
             return
 
@@ -222,7 +221,7 @@ class BuilderProcessor(esper.Processor):
         target_layer = -1
         block_type = None
 
-        world_map = self._get_world_map()
+        world_map = self.get_world_map()
         if not world_map:
             return
 
@@ -337,12 +336,12 @@ class BuilderProcessor(esper.Processor):
             if block_type == BlockType.DRONE_STATION:
                 self._spawn_drone(gx, gy, ent)
 
-            world_map = self._get_world_map()
+            world_map = self.get_world_map()
             if world_map:
                 world_map.entity_map[(gx, gy, layer)] = ent
 
     def _remove_entity(self, gx, gy, layer):
-        world_map = self._get_world_map()
+        world_map = self.get_world_map()
         if not world_map:
             return
 
@@ -353,14 +352,18 @@ class BuilderProcessor(esper.Processor):
                 try:
                     sprite_comp = esper.component_for_entity(ent_id, Renderable)
                     sprite_comp.sprite.remove_from_sprite_lists()
-                    
+
                     # Check for linked drone
                     if esper.has_component(ent_id, DroneStation):
                         station = esper.component_for_entity(ent_id, DroneStation)
-                        if station.drone_id != -1 and esper.entity_exists(station.drone_id):
+                        if station.drone_id != -1 and esper.entity_exists(
+                            station.drone_id
+                        ):
                             # Remove drone sprite
                             if esper.has_component(station.drone_id, Renderable):
-                                drone_rend = esper.component_for_entity(station.drone_id, Renderable)
+                                drone_rend = esper.component_for_entity(
+                                    station.drone_id, Renderable
+                                )
                                 drone_rend.sprite.remove_from_sprite_lists()
                             esper.delete_entity(station.drone_id)
 
@@ -373,7 +376,7 @@ class BuilderProcessor(esper.Processor):
             self._update_single_floor_visuals(gx + dx, gy + dy)
 
     def _update_single_floor_visuals(self, gx: int, gy: int) -> None:
-        world_map = self._get_world_map()
+        world_map = self.get_world_map()
         if not world_map:
             return
 
@@ -399,7 +402,7 @@ class BuilderProcessor(esper.Processor):
         world_map.entity_map[(gx, gy, 0)] = ent
 
     def refresh_visuals(self):
-        world_map = self._get_world_map()
+        world_map = self.get_world_map()
         if not world_map:
             return
 

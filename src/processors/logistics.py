@@ -3,7 +3,13 @@ import esper
 import math
 
 from src.components import Position, Velocity, Renderable
-from src.components.logistics import Collector, ResourceChunk, Drone, Storage, DroneStation
+from src.components.logistics import (
+    Collector,
+    ResourceChunk,
+    Drone,
+    Storage,
+    DroneStation,
+)
 from src.components.gameplay import Inventory, PlayerControl
 from src.components.production import Factory
 from src.components.map import MapTag
@@ -93,7 +99,9 @@ class LogisticsProcessor(esper.Processor):
         esper.delete_entity(ent)
 
     def _process_drones(self, dt: float):
-        for ent, (drone, pos, renderable) in esper.get_components(Drone, Position, Renderable):
+        for ent, (drone, pos, renderable) in esper.get_components(
+            Drone, Position, Renderable
+        ):
             if drone.state == "IDLE":
                 self._handle_idle(ent, drone, pos)
             elif drone.state == "MOVING_TO_SOURCE":
@@ -126,7 +134,7 @@ class LogisticsProcessor(esper.Processor):
         if self._move_towards(dt, pos, target_pos, drone.speed, renderable):
             # Arrived
             self._take_items(drone, drone.source_id)
-            
+
             # Find target (Storage or Factory)
             target_id = self._find_target(pos, drone)
             if target_id != -1:
@@ -159,59 +167,62 @@ class LogisticsProcessor(esper.Processor):
         dx = target_pos.x - current_pos.x
         dy = target_pos.y - current_pos.y
         dist = math.hypot(dx, dy)
-        
+
         if dist < 5.0:
             return True
-            
+
         angle = math.atan2(dy, dx)
         current_pos.x += math.cos(angle) * speed * dt
         current_pos.y += math.sin(angle) * speed * dt
-        
+
         renderable.sprite.center_x = current_pos.x
         renderable.sprite.center_y = current_pos.y
-        renderable.sprite.angle = math.degrees(angle) - 90 # -90 because sprite points up usually
-        
-        return False
+        renderable.sprite.angle = math.degrees(angle) - 90
 
+        return False
 
     def _find_source(self, pos):
         best_id = -1
-        min_dist = float('inf')
-        
+        min_dist = float("inf")
+
         # 1. Check Collectors (High Priority)
-        for ent, (col, inv, col_pos) in esper.get_components(Collector, Inventory, Position):
+        for ent, (col, inv, col_pos) in esper.get_components(
+            Collector, Inventory, Position
+        ):
             if not inv.resources:
                 continue
-                
+
             dist = math.hypot(col_pos.x - pos.x, col_pos.y - pos.y)
             if dist < min_dist:
                 min_dist = dist
                 best_id = ent
-        
+
         if best_id != -1:
             return best_id
 
         # 2. Check Factories with Output (Medium Priority)
-        for ent, (factory, inv, factory_pos, tag) in esper.get_components(Factory, Inventory, Position, MapTag):
+        for ent, (factory, inv, factory_pos, tag) in esper.get_components(
+            Factory, Inventory, Position, MapTag
+        ):
             if not inv.resources:
                 continue
-                
+
             machine_type = tag.cell_type
-            
+
             # Determine valid inputs for this machine
             valid_inputs = set()
             for recipe_name, data in RECIPES.items():
                 if data["machine"] == machine_type:
                     for input_item in data["inputs"]:
                         valid_inputs.add(input_item)
-            
+
             # Check if there are any items that are NOT valid inputs (i.e., outputs)
             has_output = False
             for res in inv.resources:
                 if res not in valid_inputs:
                     has_output = True
                     break
-            
+
             if has_output:
                 dist = math.hypot(factory_pos.x - pos.x, factory_pos.y - pos.y)
                 if dist < min_dist:
@@ -221,10 +232,10 @@ class LogisticsProcessor(esper.Processor):
         if best_id != -1:
             return best_id
 
-        # 3. Check Storage (Low Priority) - Only if factories need resources
-        # This is a bit expensive, maybe optimize later
         needed_resources = set()
-        for ent, (factory, inv, tag) in esper.get_components(Factory, Inventory, MapTag):
+        for ent, (factory, inv, tag) in esper.get_components(
+            Factory, Inventory, MapTag
+        ):
             machine_type = tag.cell_type
             for recipe_name, data in RECIPES.items():
                 if data["machine"] == machine_type:
@@ -235,17 +246,19 @@ class LogisticsProcessor(esper.Processor):
         if not needed_resources:
             return -1
 
-        for ent, (store, inv, store_pos) in esper.get_components(Storage, Inventory, Position):
+        for ent, (store, inv, store_pos) in esper.get_components(
+            Storage, Inventory, Position
+        ):
             if not inv.resources:
                 continue
-            
+
             # Check if storage has any needed resource
             has_needed = False
             for res in inv.resources:
                 if res in needed_resources:
                     has_needed = True
                     break
-            
+
             if not has_needed:
                 continue
 
@@ -253,26 +266,28 @@ class LogisticsProcessor(esper.Processor):
             if dist < min_dist:
                 min_dist = dist
                 best_id = ent
-                
+
         return best_id
 
     def _find_target(self, pos, drone):
         best_id = -1
-        min_dist = float('inf')
-        
+        min_dist = float("inf")
+
         # 1. Check Factories that need inputs
-        for ent, (factory, inv, factory_pos, tag) in esper.get_components(Factory, Inventory, Position, MapTag):
+        for ent, (factory, inv, factory_pos, tag) in esper.get_components(
+            Factory, Inventory, Position, MapTag
+        ):
             # Check if factory accepts what drone has
             if not drone.inventory:
                 continue
-                
+
             # Get machine type and valid inputs
             machine_type = tag.cell_type
-            
+
             # Simple check: does any recipe for this machine use the item?
             accepts_item = False
             input_limit_reached = False
-            
+
             for recipe_name, data in RECIPES.items():
                 if data["machine"] == machine_type:
                     for input_item, input_amount in data["inputs"].items():
@@ -286,7 +301,7 @@ class LogisticsProcessor(esper.Processor):
                             break
                 if accepts_item:
                     break
-            
+
             if accepts_item:
                 dist = math.hypot(factory_pos.x - pos.x, factory_pos.y - pos.y)
                 if dist < min_dist:
@@ -297,7 +312,9 @@ class LogisticsProcessor(esper.Processor):
             return best_id
 
         # 2. Check Storage
-        for ent, (store, inv, store_pos) in esper.get_components(Storage, Inventory, Position):
+        for ent, (store, inv, store_pos) in esper.get_components(
+            Storage, Inventory, Position
+        ):
             # Don't return the same storage we just took from
             if ent == drone.source_id:
                 continue
@@ -306,7 +323,7 @@ class LogisticsProcessor(esper.Processor):
             if dist < min_dist:
                 min_dist = dist
                 best_id = ent
-                
+
         return best_id
 
     def _take_items(self, drone, source_id):
@@ -314,9 +331,11 @@ class LogisticsProcessor(esper.Processor):
             return
 
         inv = esper.component_for_entity(source_id, Inventory)
-        
+
         # If source is a Factory, only take OUTPUT items
-        if esper.has_component(source_id, Factory) and esper.has_component(source_id, MapTag):
+        if esper.has_component(source_id, Factory) and esper.has_component(
+            source_id, MapTag
+        ):
             tag = esper.component_for_entity(source_id, MapTag)
             machine_type = tag.cell_type
             valid_inputs = set()
@@ -324,7 +343,7 @@ class LogisticsProcessor(esper.Processor):
                 if data["machine"] == machine_type:
                     for input_item in data["inputs"]:
                         valid_inputs.add(input_item)
-            
+
             for res, amount in list(inv.resources.items()):
                 if res not in valid_inputs:
                     to_take = min(amount, drone.capacity)
@@ -337,7 +356,7 @@ class LogisticsProcessor(esper.Processor):
                 to_take = min(amount, drone.capacity)
                 remove_resources(inv, {res: to_take})
                 drone.inventory[res] = drone.inventory.get(res, 0) + to_take
-                break 
+                break
 
     def _deposit_items(self, drone, target_id):
         if not esper.has_component(target_id, Inventory):
