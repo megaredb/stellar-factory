@@ -4,6 +4,7 @@ from typing import Any
 import esper
 from src.components import Position, Velocity
 from src.components.gameplay import Inventory, PlayerControl, ResourceSource
+from src.components.world import WorldMap
 from src.processors.builder import BuilderProcessor
 from src.processors.render import RenderProcessor
 from src.entities.player import create_player
@@ -22,7 +23,17 @@ def save_game(builder: BuilderProcessor):
         data["player"] = {"x": pos.x, "y": pos.y, "inventory": inv.resources}
         break
 
-    data["map"] = builder.get_map_state()
+    # Save Map
+    for ent, (world_map,) in esper.get_components(WorldMap):
+        data["map"] = {
+            "floor": [
+                {"x": k[0], "y": k[1], "type": v} for k, v in world_map.floor_data.items()
+            ],
+            "objects": [
+                {"x": k[0], "y": k[1], "type": v} for k, v in world_map.object_data.items()
+            ],
+        }
+        break
 
     asteroids_data = []
     for ent, (pos, res, vel) in esper.get_components(
@@ -64,6 +75,10 @@ def load_game(builder: BuilderProcessor, render_processor: RenderProcessor):
     esper.clear_database()
     render_processor.clear_all_sprites()
 
+    # Recreate World Entity
+    world_map_ent = esper.create_entity(WorldMap())
+    world_map = esper.component_for_entity(world_map_ent, WorldMap)
+
     player_data = data.get("player")
     if player_data:
         ent_list = render_processor.sprite_lists["entities"]
@@ -72,7 +87,19 @@ def load_game(builder: BuilderProcessor, render_processor: RenderProcessor):
         inv = esper.component_for_entity(pid, Inventory)
         inv.resources = player_data.get("inventory", {})
 
-    builder.load_map_state(data.get("map", {}))
+    # Load Map
+    map_data = data.get("map", {})
+    # world_map is already available from creation above
+    world_map.floor_data.clear()
+    world_map.object_data.clear()
+    
+    for item in map_data.get("floor", []):
+        world_map.floor_data[(item["x"], item["y"])] = item["type"]
+
+    for item in map_data.get("objects", []):
+        world_map.object_data[(item["x"], item["y"])] = item["type"]
+
+    builder.refresh_visuals()
 
     asteroid_list = render_processor.sprite_lists["asteroids"]
     for ast_data in data.get("asteroids", []):

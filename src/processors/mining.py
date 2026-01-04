@@ -2,8 +2,12 @@ import arcade
 import esper
 import random
 import math
-from src.components import Renderable, Position, Velocity
-from src.components.gameplay import ResourceSource, Inventory, PlayerControl
+from src.components import Renderable, Position
+from src.components.gameplay import Inventory, ResourceSource, PlayerControl
+from src.components.logistics import ResourceChunk
+from src.components.physics import Velocity
+from src.systems.inventory import add_item
+from src.systems.audio import AudioSystem
 from src.processors.mouse import MouseProcessor
 
 MINING_AMOUNT = 1
@@ -20,45 +24,48 @@ class Particle:
         self.color = color
         self.life = life
         self.max_life = life
+        self.time = 0
 
 
 class MiningProcessor(esper.Processor):
-    def __init__(self, camera: arcade.Camera2D, mouse: MouseProcessor):
+    def __init__(
+        self,
+        camera: arcade.Camera2D,
+        mouse: MouseProcessor,
+        chunk_list: arcade.SpriteList,
+    ):
         super().__init__()
+        self.time = 0.0
         self.camera = camera
         self.mouse = mouse
+        self.chunk_list = chunk_list
 
         self.mining_timer = 0.0
 
-        # Для визуализации лазера
         self.is_mining_active = False
         self.laser_start = (0.0, 0.0)
         self.laser_end = (0.0, 0.0)
 
-        # Список частиц
         self.particles: list[Particle] = []
 
     def process(self, dt: float):
+        self.time += dt % math.pi
         self.is_mining_active = False
         self._update_particles(dt)
 
-        if not self.mouse.is_pressed(arcade.MOUSE_BUTTON_LEFT):
-            self.mining_timer = 0  # Сбрасываем таймер, если отпустили кнопку
+        if not self.mouse.is_pressed(arcade.MOUSE_BUTTON_RIGHT):
+            self.mining_timer = 0
             return
 
-        # 1. Получаем координаты мыши в мире
         world_x, world_y, world_z = self.camera.unproject((self.mouse.x, self.mouse.y))
 
-        # 2. Ищем астероид под курсором
         target_entity = None
         target_pos = None
 
-        # Оптимизация: Сначала проверяем, попадаем ли мы вообще в какой-то астероид
-        # Можно было бы использовать пространственный хеш, но для <1000 объектов перебор ок
         for ent, (res_source, renderable, pos) in esper.get_components(
             ResourceSource, Renderable, Position
         ):
-            if renderable.sprite.collides_with_point((world_x, world_y)):
+            if res_source.amount > 0 and renderable.sprite.collides_with_point((world_x, world_y)):
                 target_entity = ent
                 target_pos = (pos.x, pos.y)
                 break
@@ -66,10 +73,8 @@ class MiningProcessor(esper.Processor):
         if target_entity is None or target_pos is None:
             return
 
-        # АСТЕРОИД НАЙДЕН - БЛОКИРУЕМ СТРОИТЕЛЬСТВО
         self.mouse.mark_handled()
 
-        # 3. Ищем игрока (источник лазера и получатель ресурсов)
         player_inventory = None
         player_pos = None
         for ent, (inv, ctrl, pos) in esper.get_components(
@@ -82,15 +87,13 @@ class MiningProcessor(esper.Processor):
         if player_inventory is None or player_pos is None:
             return
 
-        # 4. Визуализация лазера (рисуем всегда, когда зажато на астероиде)
         self.is_mining_active = True
         self.laser_start = player_pos
         self.laser_end = (
             world_x,
             world_y,
-        )  # Лазер бьет в точку клика, а не в центр астероида
+        )
 
-        # 5. Логика периодической добычи
         self.mining_timer += dt
         if self.mining_timer >= MINING_RATE:
             self.mining_timer = 0
@@ -99,24 +102,28 @@ class MiningProcessor(esper.Processor):
     def _mine_step(
         self, entity_id: int, inventory: Inventory, pos: tuple[float, float]
     ):
-        """Один тик добычи"""
         res_source = esper.component_for_entity(entity_id, ResourceSource)
 
         amount_to_take = min(MINING_AMOUNT, res_source.amount)
         res_source.amount -= amount_to_take
-        inventory.add(res_source.resource_type, amount_to_take)
 
-        # Эффекты
+        # Spawn chunk
+        self._spawn_chunk(pos[0], pos[1], res_source.resource_type, amount_to_take)
+
+        AudioSystem().play_sound("laser")
+
         self._spawn_particles(
             self.laser_end[0], self.laser_end[1], res_source.resource_type
         )
 
+        renderable: Renderable | None = None
+
         try:
             renderable = esper.component_for_entity(entity_id, Renderable)
-            # Легкая тряска
-            renderable.sprite.angle += random.randint(-5, 5)
-            # Можно чуть уменьшать спрайт по мере добычи
-            # renderable.sprite.scale = 0.5 + 0.5 * (res_source.amount / res_source.max_amount)
+            renderable.sprite.angle += random.randint(-10, 10)
+            renderable.sprite.scale = 0.7 + 0.3 * (
+                res_source.amount / res_source.max_amount
+            )
         except KeyError:
             pass
 
@@ -134,7 +141,7 @@ class MiningProcessor(esper.Processor):
         elif res_type == "silicon":
             color = arcade.color.BLUE_GRAY
 
-        for _ in range(3):  # 3 искры за тик
+        for _ in range(3):
             angle = random.uniform(0, 6.28)
             speed = random.uniform(30, 100)
             dx = math.cos(angle) * speed
@@ -142,37 +149,62 @@ class MiningProcessor(esper.Processor):
             life = random.uniform(0.3, 0.6)
             self.particles.append(Particle(x, y, dx, dy, color, life))
 
+    def _spawn_chunk(self, x, y, res_type, amount):
+        sprite = arcade.SpriteCircle(3, arcade.color.YELLOW)  # Placeholder color
+        if res_type == "iron":
+            sprite.color = arcade.color.GRAY
+        elif res_type == "gold":
+            sprite.color = arcade.color.GOLD
+        elif res_type == "silicon":
+            sprite.color = arcade.color.BLUE_GRAY
+
+        sprite.center_x = x
+        sprite.center_y = y
+        self.chunk_list.append(sprite)
+
+        angle = random.uniform(0, 6.28)
+        speed = random.uniform(20, 50)
+        dx = math.cos(angle) * speed
+        dy = math.sin(angle) * speed
+
+        esper.create_entity(
+            Position(x, y),
+            Velocity(dx, dy),
+            Renderable(sprite=sprite),
+            ResourceChunk(resource_type=res_type, amount=amount),
+        )
+
     def _update_particles(self, dt):
         for p in self.particles:
             p.life -= dt
             p.x += p.dx * dt
             p.y += p.dy * dt
-            # Замедление частиц
+
             p.dx *= 0.9
             p.dy *= 0.9
 
-        # Удаляем мертвые частицы
         self.particles = [p for p in self.particles if p.life > 0]
 
     def on_draw(self):
-        # Рисуем лазер
         if self.is_mining_active:
+            time_sin = math.sin(self.time * 4)
+
             arcade.draw_line(
                 self.laser_start[0],
                 self.laser_start[1],
                 self.laser_end[0],
                 self.laser_end[1],
                 LASER_COLOR,
-                3,
+                3 + time_sin,
             )
-            # Вторая линия для эффекта свечения
+
             arcade.draw_line(
                 self.laser_start[0],
                 self.laser_start[1],
                 self.laser_end[0],
                 self.laser_end[1],
-                (255, 255, 255, 100),
-                1,
+                (255, 255, 255, 180),
+                1 + time_sin,
             )
 
         for p in self.particles:

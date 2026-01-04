@@ -20,6 +20,7 @@ class RenderProcessor(esper.Processor):
             fragment_shader="shaders/stars.frag",
             vertex_shader="shaders/default_vs.glsl",
         )
+        self.program["u_resolution"] = (window.width, window.height)
         self.total_time = 0.0
 
         self.sprite_lists: dict[str, SpriteListType] = {
@@ -27,6 +28,9 @@ class RenderProcessor(esper.Processor):
             "objects": arcade.SpriteList(),
             "asteroids": arcade.SpriteList(),
             "entities": arcade.SpriteList(),
+            "projectiles": arcade.SpriteList(),
+            "chunks": arcade.SpriteList(),
+            "drones": arcade.SpriteList(),
         }
 
     def process(self, dt: float) -> None:
